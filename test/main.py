@@ -23,7 +23,7 @@ if __name__ == "__main__":
     hunter_max_hp = 300
     hunter_range = .3
     hunter_init_pos = 1
-    hunter_mov_spd = 0.1
+    hunter_mov_spd = 0.15
 
     warrior_skill_set = (3, 4, 5)
     warrior_max_hp = 300
@@ -61,12 +61,12 @@ if __name__ == "__main__":
         hunter_score = 0
         warrior_score = 0
         while not done:
-
+            # hunter_env.render()
             'Hunter part'
             hunter_state = hunter_state.reshape(1, -1)
-            # hunter_env.render()
+            # hunter_action = hunter_agent.choose_action(hunter_state)
             hunter_action = np.argmax(hunter_agent.target_model.predict(hunter_state))
-            # print(action)
+
             dist = abs(hunter_pos - warrior_pos)
             hunter_reward = min(dist, hunter_range) * 5
 
@@ -81,7 +81,7 @@ if __name__ == "__main__":
                 hunter_pos = min(1, hunter_pos + hunter_mov_spd)
             elif hunter_action == 3:
                 if hunter_env.use_skill(0, dist):
-                    warrior_hp -= 20
+                    warrior_hp -= 23
                     hunter_reward += 1
                    # print('hunter attack')
                 else:
@@ -110,21 +110,10 @@ if __name__ == "__main__":
                 hunter_env.skill_timer[1] == 0,
                 hunter_env.skill_timer[2] == 0
             ), dtype=np.float32)
-            # print(next_state)
-            if warrior_hp < 0:
-                hunter_reward = 50 + hunter_hp * 2
-            elif hunter_hp < 0:
-                hunter_reward = -100
-
-            hunter_state = next_hunter_state
-            hunter_env.state = hunter_state
-            hunter_env.hp = hunter_hp
-            hunter_env.pos = hunter_pos
-
 
             warrior_state = warrior_state.reshape(1, -1)
-            warrior_action = warrior_agent.choose_action(warrior_state)
-            # warrior_action = np.argmax(warrior_agent.target_model.predict(warrior_state))
+            # warrior_action = warrior_agent.choose_action(warrior_state)
+            warrior_action = np.argmax(warrior_agent.target_model.predict(warrior_state))
             dist = abs(hunter_pos - warrior_pos)
             warrior_reward = -dist * 5
 
@@ -178,31 +167,40 @@ if __name__ == "__main__":
                 hunter_reward = -100
                 warrior_reward = 50 + warrior_hp/warrior_max_hp * 200
 
-
-            hunter_score += hunter_reward
-            warrior_score += warrior_reward
             hunter_agent.remember(hunter_state, hunter_action, hunter_reward, next_hunter_state.reshape(1, -1), done)
-            warrior_agent.remember(warrior_state, warrior_action, warrior_reward, next_warrior_state.reshape(1, -1), done)
-            
+
+            hunter_state = next_hunter_state
+            hunter_env.state = hunter_state
+            hunter_env.hp = hunter_hp
+            hunter_env.pos = hunter_pos
+
+            warrior_agent.remember(warrior_state, warrior_action, warrior_reward, next_warrior_state.reshape(1, -1),
+                                   done)
             warrior_state = next_warrior_state
             warrior_env.state = warrior_state
             warrior_env.hp = warrior_hp
             warrior_env.pos = warrior_pos
 
-            score_avg += warrior_score
-            if len(warrior_agent.memory) >= warrior_agent.train_start:
-                warrior_agent.train_model()
+            hunter_score += hunter_reward
+            warrior_score += warrior_reward
+
+
+
+            score_avg += hunter_score
+            #if len(hunter_agent.memory) >= hunter_agent.train_start:
+               # hunter_agent.train_model()
+
             if done:
                 print('done! hunter:{0:4f} / warrior:{1:4f}'.format(hunter_score, warrior_score))
-                hunter_agent.update_target_model()
-                warrior_agent.update_target_model()
+                # hunter_agent.update_target_model()
+                # warrior_agent.update_target_model()
                 episodes.append(e)
                 # plt.plot(episodes, scores, 'b')
                 # plt.xlabel('episode')
                 # plt.ylabel('average score')
                 # plt.savefig('cartpole_graph.png')
-                if score_avg/(e+1) > 300:
-                    warrior_agent.save_weight('warrior')
-                    warrior_agent.save_model('warrior')
+                if hunter_score > 300:
+                    #hunter_agent.save_weight('hunter')
+                    #hunter_agent.save_model('hunter')
                     sys.exit()
                 
