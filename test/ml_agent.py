@@ -8,6 +8,7 @@ from tensorflow.keras.layers import Dense
 from tensorflow.keras.initializers import RandomUniform
 from tensorflow.keras.optimizers import Adam
 
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 class DQN(tf.keras.Model):
     def __init__(self, action_size):
@@ -95,6 +96,13 @@ class DQNAgent:
                            metrics=['accuracy'])
         self.target_model.save('./save_model/'+name)
 
+    def save_weight(self, name):
+        self.target_model.save_weights('./save_model/'+name)
+
     def load_model(self, name):
-        # agent.model.load_weights('./save_model/model')
-        return tf.keras.models.load_model('./save_model/'+name)
+        self.model = tf.keras.models.load_model('./save_model/'+name)
+        self.target_model = tf.keras.models.load_model('./save_model/' + name)
+
+    def load_weight(self, name):
+        self.model.load_weights('./save_model/'+name)
+        self.target_model.load_weights('./save_model/' + name)

@@ -33,8 +33,9 @@ if __name__ == "__main__":
     action_size = env.action_space.n
     print('s_size', state_size, 'a_size', action_size)
     agent = DQNAgent(state_size, action_size)
-    agent.target_model = agent.load_model('hunter')
-    agent.model = agent.load_model('hunter')
+    agent.load_weight('hunter')
+
+
     scores, episodes = [], []
     score_avg = 0
 
@@ -50,7 +51,7 @@ if __name__ == "__main__":
             state = state.reshape(1, -1)
             env.render()
             action = np.argmax(agent.target_model.predict(state))
-
+            agent.model.predict(state)
             hp = env.hp
             pos = env.pos
             # print(action)
@@ -110,15 +111,12 @@ if __name__ == "__main__":
                 reward = -100
             score += reward
             agent.remember(state, action, reward, next_state.reshape(1, -1), done)
-
+            if len(agent.memory) >= agent.train_start:
+                agent.train_model()
             state = next_state
             env.state = state
             env.hp = hp
             env.pos = pos
-
-
-            if len(agent.memory) >= agent.train_start:
-                agent.train_model()
             if done:
                 print('done!', score)
                 agent.update_target_model()
@@ -129,7 +127,7 @@ if __name__ == "__main__":
                 # plt.xlabel('episode')
                 # plt.ylabel('average score')
                 # plt.savefig('cartpole_graph.png')
-                if score > 340:
+                if score > 200 and enemy_hp < 0:
                     agent.save_weight('hunter')
                     agent.save_model('hunter')
                     sys.exit()
