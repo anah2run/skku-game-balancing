@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     print('s_size', state_size, 'a_size', action_size)
     hunter_agent = DQNAgent(state_size, action_size)
-    # hunter_agent.load_model('hunter')
+    hunter_agent.load_model('hunter')
     warrior_agent = DQNAgent(state_size, action_size)
     warrior_agent.load_model('warrior')
     scores, episodes = [], []
@@ -71,7 +71,7 @@ if __name__ == "__main__":
             # hunter_action = np.argmax(hunter_agent.target_model.predict(hunter_state))
 
             dist = abs(hunter_pos - warrior_pos)
-            hunter_reward = 0 # min(dist, hunter_range) * 5
+            hunter_reward = 0  # min(dist, hunter_range) * 5
 
             if hunter_action == 0:
                 hunter_reward -= 0.5
@@ -86,14 +86,14 @@ if __name__ == "__main__":
                 if hunter_env.use_skill(0, dist):
                     warrior_hp -= 20
                     hunter_reward += 2
-                   # print('hunter attack')
+                # print('hunter attack')
                 else:
                     hunter_reward -= 1
             elif hunter_action == 4:
                 if hunter_env.use_skill(1, dist):
                     hunter_reward += 4
                     warrior_hp -= 40
-                   # print('hunter skill')
+                # print('hunter skill')
                 else:
                     hunter_reward -= 1
             elif hunter_action == 5:
@@ -101,23 +101,73 @@ if __name__ == "__main__":
                     heal = min(hunter_max_hp - hunter_hp, .2 * hunter_max_hp)
                     hunter_reward = heal / hunter_max_hp * 5
                     hunter_hp += heal
-                   # print('hunter heal')
+                # print('hunter heal')
             next_hunter_state, _, done, info = hunter_env.step(hunter_action)
 
             next_hunter_state = np.array((
                 hunter_hp / hunter_max_hp,
                 hunter_pos,
                 warrior_hp / warrior_max_hp,
-                warrior_pos ,
+                warrior_pos,
                 hunter_env.skill_timer[0] == 0,
                 hunter_env.skill_timer[1] == 0,
                 hunter_env.skill_timer[2] == 0
             ), dtype=np.float32)
 
+            warrior_state = warrior_state.reshape(1, -1)
+            # warrior_action = warrior_agent.choose_action(warrior_state)
+            warrior_action = np.argmax(warrior_agent.target_model.predict(warrior_state))
+            dist = abs(hunter_pos - warrior_pos)
+            warrior_reward = -dist * .1
+
+            if warrior_action == 0:
+                warrior_reward -= 0.3
+                # print('hunter stop')
+            elif warrior_action == 1:
+                # print('hunter move left')
+                warrior_pos = max(-1, warrior_pos - warrior_mov_spd)
+            elif warrior_action == 2:
+                # print('hunter move right')
+                warrior_pos = min(1, warrior_pos + warrior_mov_spd)
+            elif warrior_action == 3:
+                if warrior_env.use_skill(0, dist):
+                    hunter_hp -= 16
+                    warrior_reward += 1
+                # print('hunter attack')
+                else:
+                    warrior_reward -= 1
+            elif warrior_action == 4:
+                if warrior_env.use_skill(1, dist):
+                    warrior_pos = hunter_pos
+                    warrior_reward += 1
+                    hunter_hp -= 15
+                # print('hunter skill')
+                else:
+                    warrior_reward -= 1
+            elif warrior_action == 5:
+                if warrior_env.use_skill(2):
+                    heal = min(warrior_max_hp - warrior_hp, warrior_max_hp * .1)
+                    warrior_reward = heal / warrior_max_hp * 5
+                    warrior_hp += heal
+                # print('hunter heal')
+            next_warrior_state, _, done, info = warrior_env.step(warrior_action)
+
+            next_warrior_state = np.array((
+                warrior_hp / warrior_max_hp,
+                warrior_pos,
+                hunter_hp / hunter_max_hp,
+                hunter_pos,
+                warrior_env.skill_timer[0] == 0,
+                warrior_env.skill_timer[1] == 0,
+                warrior_env.skill_timer[2] == 0
+            ), dtype=np.float32)
+
             if warrior_hp < 0:
-                hunter_reward = 10#50 + hunter_hp/hunter_max_hp * 200
+                hunter_reward = 10  # 50 + hunter_hp/hunter_max_hp * 200
+                warrior_reward += 0
             elif hunter_hp < 0:
                 hunter_reward += 0
+                warrior_reward = 10  # 50 + warrior_hp/warrior_max_hp * 200
 
             hunter_agent.remember(hunter_state, hunter_action, hunter_reward, next_hunter_state.reshape(1, -1), done)
 
@@ -126,13 +176,19 @@ if __name__ == "__main__":
             hunter_env.hp = hunter_hp
             hunter_env.pos = hunter_pos
 
-            hunter_score += hunter_reward
-            hunter_hp-=.5
+            warrior_agent.remember(warrior_state, warrior_action, warrior_reward, next_warrior_state.reshape(1, -1),
+                                   done)
+            warrior_state = next_warrior_state
+            warrior_env.state = warrior_state
+            warrior_env.hp = warrior_hp
+            warrior_env.pos = warrior_pos
 
+            hunter_score += hunter_reward
+            warrior_score += warrior_reward
 
             score_avg += hunter_score
 
-            if cnt >= 200 :
+            if cnt >= 300:
                 done = True
             if len(hunter_agent.memory) >= hunter_agent.train_start:
                 hunter_agent.train_model()
@@ -148,7 +204,7 @@ if __name__ == "__main__":
                 plt.xlabel('episode')
                 plt.ylabel('damage')
                 plt.savefig('cartpole_graph.png')
-                if hunter_score >= 60:
-                   hunter_agent.save_weight('hunter')
-                   hunter_agent.save_model('hunter')
-                   sys.exit()
+                if hunter_score >= 50:
+                    hunter_agent.save_weight('hunter')
+                    hunter_agent.save_model('hunter')
+                    # sys.exit()
