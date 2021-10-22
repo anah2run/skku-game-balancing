@@ -34,7 +34,7 @@ class DQNAgent:
         self.epsilon_decay = 0.999
         self.epsilon_min = 0.01
         self.batch_size = 64
-        self.train_start = 400
+        self.train_start = 100
 
         self.memory = deque(maxlen=2000)
 

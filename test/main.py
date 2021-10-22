@@ -13,7 +13,7 @@ render = False
 
 def simulation(x,step):
     # max_hp, armor, str, crit, accuracy, avoid, atk_duration, reg_hp = params
-    hunter_params = (100, 0, 5, 0.05, .95, .05, 5, 0.5)
+    hunter_params = (200, 0, 5, 0.05, .95, .05, 5, 0.5)
     warrior_params = (x, 0, 10, 0.05, .95, .05, 7, 0)
     hunter_env = AgentEnv("hunter", hunter_params, (10, 25), warrior_params[0])
     warrior_env = AgentEnv("warrior", warrior_params, (15, 15), hunter_params[0])
@@ -149,14 +149,14 @@ def simulation(x,step):
     return mean, mse, win_rate
 
 hunter_load_model = False
-simulation(100,300)
+simulation(200,100)
 hunter_load_model = True
 warrior_load_model = False
-simulation(100,300)
+simulation(200,100)
 warrior_load_model = True
 
 if __name__ == "__main__":
-    x= init_x = 15
+    x= init_x = 300
     episodes, means, win_rates, parameters = [],[],[],[]
     num = 100
     for i in range(num):
