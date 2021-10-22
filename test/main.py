@@ -83,7 +83,7 @@ def simulation(x,step):
                     hunter_env.add_buff({'heal_ratio': .5}, 10)
                     amount = warrior_env.give_damage(warrior_env.cal_amount(warrior_env.str * 2.5))
                     hunter_env.take_damage(amount)
-            warrior_reward = amount/10
+            warrior_reward = amount/5
             warrior_env.set_enemy_hp(hunter_env.state[0])
             next_warrior_state = warrior_env.step(warrior_action)
             hunter_env.set_enemy_hp(warrior_env.state[0])
@@ -92,10 +92,8 @@ def simulation(x,step):
 
             if hunter_env.is_dead() and not warrior_env.is_dead():
                 warrior_win += 1
-                warrior_reward += 100
             elif not hunter_env.is_dead() and warrior_env.is_dead():
                 hunter_win += 1
-                hunter_reward += 100
             if hunter_env.is_dead() or warrior_env.is_dead() or cnt >= 300:
                 hunter_env.state[0] = max(0, hunter_env.state[0])
                 warrior_env.state[0] = max(0, warrior_env.state[0])
@@ -149,10 +147,10 @@ def simulation(x,step):
     return mean, mse, win_rate
 
 hunter_load_model = False
-simulation(200,100)
+simulation(200,500)
 hunter_load_model = True
 warrior_load_model = False
-simulation(200,100)
+simulation(200,500)
 warrior_load_model = True
 
 if __name__ == "__main__":
