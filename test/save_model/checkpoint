@@ -1,2 +1,2 @@
-model_checkpoint_path: "hunter"
-all_model_checkpoint_paths: "hunter"
+model_checkpoint_path: "warrior"
+all_model_checkpoint_paths: "warrior"

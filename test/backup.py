@@ -3,10 +3,9 @@ import matplotlib.pyplot as plt
 import os
 import sys
 from ml_agent import DQNAgent
-from hunter import HunterEnv
+from game_agent import HunterEnv
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-# 24?
 
 if __name__ == "__main__":
 

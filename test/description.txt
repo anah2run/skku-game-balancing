@@ -1,15 +1,4 @@
-import math
-import sys
-
-import numpy as np
-
-import gym
-from gym import spaces
-from gym.utils import seeding
-
-
-class HunterEnv(gym.Env):
-    """
+  """
     Description:
         The agent (a car) is started at the bottom of a valley. For any given
         state the agent may choose to accelerate to the left, right or cease
@@ -42,23 +31,31 @@ class HunterEnv(gym.Env):
          Episode length is greater than 200
     """
 
+    import math
+import sys
+
+import numpy as np
+
+import gym
+from gym import spaces
+from gym.utils import seeding
+
+
+class AgentEnv(gym.Env):
     metadata = {"render.modes": ["human", "ansi"]}
 
-    def __init__(self, hunter_params, skill_dict):
-        self.max_hp, self.mov_spd, self.init_pos, self.skill_set = hunter_params
-        self.skill_cool = [skill_dict[i][1] for i in self.skill_set]
-        skill_num = len(self.skill_set)
-        self.skill_timer = [0 for _ in range(skill_num)]
+    def __init__(self, params, cdt):
         self.viewer = None
-        self.action_space = spaces.Discrete(6)
-        low_base = [0, -1, 0, -1]
-        low_base.extend([0] * skill_num)
-        self.low = np.array(low_base, dtype=np.float32)
-        self.high = np.array([1] * (4 + skill_num), dtype=np.float32)
-        self.observation_space = spaces.Box(self.low, self.high, dtype=np.float32)
-        self.hp = self.max_hp
-        self.pos = self.init_pos
         self.seed()
+        self.action_space = spaces.Discrete(3)  # wait, skill1, skill2
+        self.low = np.array([0] * 6, dtype=np.float32)  # my_hp, my_mp, enemy_hp, enemy_mp, skill1_timer, skill2_timer
+        self.high = np.array([1] * 6, dtype=np.float32)
+        self.observation_space = spaces.Box(self.low, self.high, dtype=np.float32)
+        self.buff_q = {}
+        self.max_hp, self.max_mp, self.armor, self.str, self.crit, self.atk_spd, self.reg_hp, self.reg_mp = params
+        self.skill_cool = [x for x in cdt]
+
+        self.reset()
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -72,17 +69,17 @@ class HunterEnv(gym.Env):
         self.skill_timer = np.add(self.skill_timer, -0.5)
         self.skill_timer = np.clip(self.skill_timer, 0, self.skill_cool)
         hp_ratio, self.pos, enemy_hp_ratio, self.enemy_pos, _, _, _ = self.state
-        reward = -1.0
 
         done = bool(hp_ratio < 0 or enemy_hp_ratio < 0)
-
+        reward = 0
         # self.state = (hp_ratio, pos, enemy_hp_ratio, enemy_pos, 0, 0, 0)
         return np.array(self.state, dtype=np.float32), reward, done, {}
 
-    def reset(self, enemy_pos):
+    def reset(self):
         # self.np_random.uniform(low=-0.6, high=0.6)
         self.hp = self.max_hp
-        self.pos = self.init_pos
+        self.mp = self.max_mp
+        self.skill_timer = [0, 0]
         self.state = np.array([1, self.init_pos, 1, enemy_pos, 1, 1, 1])
         return np.array(self.state, dtype=np.float32)
 
