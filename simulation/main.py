@@ -6,6 +6,7 @@ from ml_agent import DQNAgent
 from game_agent import AgentEnv
 import tensorflow as tf
 
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 hunter_load_model = True
 warrior_load_model = True
@@ -60,9 +61,9 @@ def simulation(x,step):
             elif hunter_action == 2:
                 if hunter_env.use_skill(1):
                     hunter_env.add_buff({'deal_ratio': 1.5}, 10)
-                    amount = hunter_env.cal_amount(hunter_env.max_hp * .2)
+                    amount = hunter_env.cal_amount(hunter_env.max_hp * .1)
                     hunter_env.heal(amount)
-            hunter_reward = amount/5
+            hunter_reward = int(amount > 0) -.1
 
             amount = 0
             'Warrior part'
@@ -83,7 +84,7 @@ def simulation(x,step):
                     hunter_env.add_buff({'heal_ratio': .5}, 10)
                     amount = warrior_env.give_damage(warrior_env.cal_amount(warrior_env.str * 2.5))
                     hunter_env.take_damage(amount)
-            warrior_reward = amount/5
+            warrior_reward = int(amount > 0) -.1
             warrior_env.set_enemy_hp(hunter_env.state[0])
             next_warrior_state = warrior_env.step(warrior_action)
             hunter_env.set_enemy_hp(warrior_env.state[0])
@@ -99,8 +100,8 @@ def simulation(x,step):
                 warrior_env.state[0] = max(0, warrior_env.state[0])
                 next_warrior_state[0] = warrior_env.state[0]
                 next_hunter_state[0] = hunter_env.state[0]
-                hunter_reward += hunter_env.hp_ratio() * 50
-                warrior_reward += warrior_env.hp_ratio() * 50
+                hunter_reward += hunter_env.hp_ratio() * 100
+                warrior_reward += warrior_env.hp_ratio() * 100
                 done = True
 
             hunter_agent.remember(hunter_state, hunter_action, hunter_reward, next_hunter_state.reshape(1, -1), done)
